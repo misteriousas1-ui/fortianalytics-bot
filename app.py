@@ -33,12 +33,16 @@ def get_signals(q: str = "BTC", code: str = "0"):
     
     return {"data": [analyze_symbol(symbol_to_fetch)], "status": status}
 
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# Ubah menjadi folder tempat app.py berada (root)
+root_dir = os.path.dirname(__file__)
+
+# Mount static ke folder root agar CSS/JS/Manifest terbaca
+app.mount("/static", StaticFiles(directory=root_dir), name="static")
 
 @app.get("/")
 async def root():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    # Mengambil index.html dari folder root, bukan folder static
+    return FileResponse(os.path.join(root_dir, "index.html"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
