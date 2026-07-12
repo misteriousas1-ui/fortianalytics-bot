@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>FORTIANALYTICS INSTITUTIONAL TERMINAL</title>
+    <!-- Tambahan untuk PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="FortiTerminal">
+    <meta name="theme-color" content="#000000">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #000; color: #00ff00; font-family: 'Courier New', Courier, monospace; }
+        .marquee-container { width: 100%; overflow: hidden; background: #050505; border-top: 1px solid #1a3a1a; padding: 10px 0; position: fixed; bottom: 0; left: 0; z-index: 50; }
+        .marquee-text { display: inline-block; white-space: nowrap; color: #00ff00; font-size: 14px; animation: marquee 30s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(100%, 0); } 100% { transform: translate(-100%, 0); } }
+        .grid-header { border-bottom: 2px solid #00ff00; color: #fff; font-weight: bold; }
+        .pulse-effect { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-inner { min-width: 800px; }
+    </style>
+</head>
+<body class="p-6 pb-40">
+    <div id="sentiment-dashboard" class="max-w-7xl mx-auto my-2 p-2 border border-green-900 bg-black text-center text-xs font-bold text-green-500 uppercase tracking-widest">
+        MARKET SENTIMENT: ANALYZING...
+    </div>
+
+    <div class="max-w-7xl mx-auto my-4 p-4 border border-red-900/30 bg-red-950/5 text-center">
+        <h3 class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Risk Warning & Legal Disclaimer</h3>
+        <p class="text-[9px] text-gray-500 font-mono leading-relaxed">
+            Fortianalytics Terminal adalah alat bantu analisis teknikal (Edukasi). Sinyal otomatis yang ditampilkan sebagai alat bantu mencari signal. 
+            Segala bentuk kerugian finansial akibat penggunaan data ini sepenuhnya adalah tanggung jawab pengguna. 
+            Gunakan manajemen risiko yang ketat. gunakan web signal dengan bijak.
+        </p>
+    </div>
+
+    <div class="max-w-7xl mx-auto my-2 bg-[#0a0a0a] border border-yellow-900/50 p-2 text-center text-[9px] text-yellow-600 uppercase">Ruang Iklan Sponsor - Dukung Operasional VPS Kami</div>
+
+    <div class="max-w-7xl mx-auto border border-green-900 p-6 rounded bg-black shadow-[0_0_15px_rgba(0,255,0,0.1)]">
+        <div class="flex justify-between items-center mb-6 border-b border-green-900 pb-2">
+            <h1 class="text-3xl font-bold uppercase tracking-widest text-white">Fortianalytics Institutional Terminal v5.2</h1>
+            <div id="clock" class="text-xs text-gray-500 font-mono">SYNCING...</div>
+        </div>
+
+        <div class="text-[9px] text-green-700 italic mb-2">* NOTE: SIGNAL BERUBAH SETIAP 1 MENIT (CANDLE CLOSE) - REALTIME DATA SYNCED.</div>
+
+        <div class="text-[11px] text-white mb-2 font-bold">
+            PENGGUNA BASIC: HANYA AKSES SIGNAL BTC | <span class="text-yellow-500">UPGRADE PREMIUM (RP 49.000 SELAMANYA): AKSES SEMUA PAIR MARKET</span>
+        </div>
+
+        <div class="flex gap-4 mb-2">
+            <input id="search" placeholder="INPUT SYMBOL (BTC ONLY)" 
+                    onkeypress="if(event.key === 'Enter') checkAndLoad()"
+                    class="bg-black border border-green-900 p-2 w-full focus:outline-none focus:border-green-500 uppercase text-white">
+            <button onclick="checkAndLoad()" class="bg-green-900 px-6 py-2 hover:bg-green-700 transition-all font-bold text-white uppercase">Connect</button>
+            <button onclick="document.getElementById('premium-modal').classList.remove('hidden')" class="bg-yellow-900 px-6 py-2 text-white font-bold uppercase hover:bg-yellow-700">Upgrade</button>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+            <input id="access-code" placeholder="MASUKKAN SANDI PREMIUM" class="bg-black border border-yellow-900 p-2 w-full text-white uppercase text-xs">
+            <button onclick="saveCode()" class="bg-yellow-900 px-4 py-2 text-white font-bold uppercase hover:bg-yellow-700 text-xs">AKTIVASI SANDI</button>
+        </div>
+
+        <div class="table-responsive">
+            <div class="grid grid-cols-10 gap-2 p-3 grid-header text-[11px] uppercase mb-2 text-center table-inner">
+                <div class="text-left">Symbol</div><div>Price</div><div>RSI</div><div>MA</div><div>Sentiment</div><div class="text-yellow-500">Entry</div><div class="text-red-500">SL</div><div class="text-green-400">TP1</div><div class="text-green-400">TP2</div><div>Signal</div>
+            </div>
+            <div id="terminal" class="space-y-1 table-inner"></div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-green-900">
+            <h2 class="text-xs font-bold text-white mb-2 uppercase">Live Price Chart</h2>
+            <div style="height: 150px;">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mt-10">
+            <h2 class="text-sm font-bold text-white mb-2 uppercase border-l-4 border-green-700 pl-2">Live Signal Logs</h2>
+            <div id="log-container" class="bg-black border border-green-900 p-4 h-32 overflow-y-auto text-[10px] text-gray-400 font-mono space-y-1"></div>
+        </div>
+    </div>
+
+    <div id="premium-modal" class="hidden fixed inset-0 bg-black/95 z-[100] flex items-center justify-center">
+        <div class="bg-black border border-green-900 p-8 max-w-sm w-full text-center">
+            <h2 class="text-xl font-bold text-white mb-4 uppercase underline">Upgrade Premium</h2>
+            <p class="text-xs text-gray-400 mb-6">INPUT TERBATAS HANYA UNTUK BTC. UPGRADE SEKARANG UNTUK AKSES SEMUA SYMBOL!</p>
+            <div class="space-y-3">
+                <button onclick="window.location.href='https://wa.me/6285776829661?text=Halo+Admin+Fortianalytics,+saya+ingin+Upgrade+Premium+Satu+Kali+Rp19000'" 
+                        class="w-full bg-green-900 p-4 text-white font-bold hover:bg-green-700 uppercase transition-all">AKTIVASI - Rp 49.000</button>
+            </div>
+            <button onclick="document.getElementById('premium-modal').classList.add('hidden')" class="mt-6 text-gray-500 text-xs hover:text-white">Tutup</button>
+        </div>
+    </div>
+
+    <div class="marquee-container"><div id="ticker" class="marquee-text">INITIALIZING QUANTITATIVE FEED...</div></div>
+
+    <script>
+        let signalLogs = [];
+        let lastSignals = {};
+        
+        function playAlert(symbol, signal) {
+            let count = 0;
+            
+            function triggerSound() {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            }
+
+            function triggerSpeech() {
+                const message = new SpeechSynthesisUtterance(`${signal} signal on ${symbol}`);
+                message.lang = 'en-US';
+                message.rate = 1.2;
+                window.speechSynthesis.speak(message);
+            }
+
+            const interval = setInterval(() => {
+                triggerSound();
+                if (count === 0) triggerSpeech();
+                count++;
+                if (count >= 3) clearInterval(interval);
+            }, 800);
+        }
+        
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: [], 
+                datasets: [
+                    { label: 'Price', data: [], borderColor: '#00ff00', borderWidth: 2, fill: false, tension: 0.4, pointRadius: 4, pointBackgroundColor: [] },
+                    { label: 'MA50', data: [], borderColor: '#eab308', borderWidth: 1, tension: 0.4, pointRadius: 0 }
+                ] 
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { ticks: { color: '#00ff00', font: { size: 10 } } } } }
+        });
+
+        setInterval(() => { document.getElementById('clock').innerText = "SERVER TIME: " + new Date().toUTCString(); }, 1000);
+
+        function saveCode() {
+            const code = document.getElementById('access-code').value.toUpperCase();
+            localStorage.setItem('access_code', code);
+            alert("Sandi tersimpan! Terminal akan refresh.");
+            location.reload();
+        }
+
+        async function checkAndLoad() {
+            const input = document.getElementById('search').value.toUpperCase();
+            const code = localStorage.getItem('access_code') || "0";
+            const res = await fetch(`/signals?q=${input}&code=${code}`);
+            const data = await res.json();
+            if (input !== "" && input !== "BTC" && data.status === "BASIC") {
+                document.getElementById('premium-modal').classList.remove('hidden');
+            } else {
+                loadSignals();
+            }
+        }
+
+        async function loadSignals() {
+            const q = document.getElementById('search').value.toUpperCase() || "BTC";
+            const code = localStorage.getItem('access_code') || "0";
+            const res = await fetch(`/signals?q=${q}&code=${code}`);
+            const data = await res.json();
+            
+            if (window.currentSymbol !== q) {
+                myChart.data.labels = [];
+                myChart.data.datasets[0].data = [];
+                myChart.data.datasets[0].pointBackgroundColor = [];
+                myChart.data.datasets[1].data = [];
+                window.currentSymbol = q;
+            }
+
+            let buys = 0, sells = 0;
+            document.getElementById('terminal').innerHTML = data.data.map(s => {
+                if(s.signal === 'BUY') buys++; else if(s.signal === 'SELL') sells++;
+
+                if (s.signal !== 'HOLD' && s.signal !== 'ERROR' && lastSignals[s.symbol] !== s.signal) {
+                    playAlert(s.symbol, s.signal);
+                }
+
+                myChart.data.labels.push(""); 
+                myChart.data.datasets[0].data.push(s.price);
+                myChart.data.datasets[0].pointBackgroundColor.push(s.signal === 'BUY' ? '#22c55e' : (s.signal === 'SELL' ? '#ef4444' : '#00000000'));
+                myChart.data.datasets[1].data.push(s.ma50);
+                
+                if(myChart.data.labels.length > 20) { 
+                    myChart.data.labels.shift(); 
+                    myChart.data.datasets[0].data.shift();
+                    myChart.data.datasets[0].pointBackgroundColor.shift();
+                    myChart.data.datasets[1].data.shift();
+                }
+                myChart.update();
+
+                if (s.signal !== 'HOLD' && s.signal !== 'ERROR') {
+                    if (lastSignals[s.symbol] !== s.signal) {
+                        signalLogs.unshift(`[${new Date().toLocaleTimeString()}] ${s.symbol}: ${s.signal} AT $${s.price}`);
+                        if(signalLogs.length > 50) signalLogs.pop();
+                        document.getElementById('log-container').innerHTML = signalLogs.join('<br>');
+                        lastSignals[s.symbol] = s.signal;
+                    }
+                } else { lastSignals[s.symbol] = 'HOLD'; }
+                
+                return `<div class="grid grid-cols-10 gap-2 border-b border-green-900/20 p-3 text-xs items-center text-center ${s.signal !== 'HOLD' ? 'pulse-effect' : ''}">
+                    <div class="font-bold text-white text-left">${s.symbol}</div>
+                    <div class="text-green-400">$${s.price.toLocaleString()}</div>
+                    <div>${s.rsi}</div>
+                    <div class="text-yellow-500">${s.ma50}</div>
+                    <div class="text-xs ${s.rsi > 50 ? 'text-green-500' : 'text-red-500'}">${s.rsi > 50 ? 'BULL' : 'BEAR'}</div>
+                    <div class="text-yellow-500">${s.entry > 0 ? '$' + s.entry : '-'}</div>
+                    <div class="text-red-500 font-bold">${s.sl > 0 ? '$' + s.sl : '-'}</div>
+                    <div class="text-green-400 font-bold">${s.tp1 > 0 ? '$' + s.tp1 : '-'}</div>
+                    <div class="text-green-400 font-bold">${s.tp2 > 0 ? '$' + s.tp2 : '-'}</div>
+                    <div class="font-black ${s.signal === 'BUY' ? 'text-green-400' : s.signal === 'SELL' ? 'text-red-500' : 'text-gray-500'}">${s.signal}</div>
+                </div>`;
+            }).join('');
+            
+            document.getElementById('sentiment-dashboard').innerText = `MARKET SENTIMENT: ${buys > sells ? 'BULLISH' : 'BEARISH'} (${buys} BUY / ${sells} SELL)`;
+            document.getElementById('ticker').innerText = "SIGNAL MODE: 1M_FIXED | UPDATE: NEXT_CANDLE_CLOSE | " + 
+                                                        data.data.map(s => `[${s.symbol}] $${s.price} | RSI:${s.rsi} | SIGNAL:${s.signal}`).join(' || ');
+        }
+        
+        setInterval(loadSignals, 5000);
+        loadSignals();
+
+        // Registrasi Service Worker untuk PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Terminal PWA Registered!'))
+                .catch(err => console.log('Service Worker Failed', err));
+        }
+    </script>
+</body>
+</html>
