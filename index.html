@@ -22,11 +22,28 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .table-inner { min-width: 800px; }
-        /* MEMAKSA FULL WIDTH DI MOBILE */
         .max-w-7xl { max-width: 100% !important; width: 100% !important; margin-left: auto; margin-right: auto; }
+
+        /* CSS KHUSUS MOBILE AGAR BERDERET KE BAWAH */
+        @media (max-width: 768px) {
+            .table-inner { min-width: 100% !important; }
+            .grid-header { display: none !important; } 
+            #terminal > div { display: flex !important; flex-direction: column !important; border: 1px solid #004400 !important; margin-bottom: 10px !important; padding: 10px !important; }
+            #terminal > div > div { display: flex !important; justify-content: space-between !important; width: 100% !important; text-align: right !important; }
+            #terminal > div > div:nth-child(1)::before { content: "Symbol:"; font-weight: bold; }
+            #terminal > div > div:nth-child(2)::before { content: "Price:"; font-weight: bold; }
+            #terminal > div > div:nth-child(3)::before { content: "RSI:"; font-weight: bold; }
+            #terminal > div > div:nth-child(4)::before { content: "MA:"; font-weight: bold; }
+            #terminal > div > div:nth-child(5)::before { content: "Sentiment:"; font-weight: bold; }
+            #terminal > div > div:nth-child(6)::before { content: "Entry:"; font-weight: bold; }
+            #terminal > div > div:nth-child(7)::before { content: "SL:"; font-weight: bold; }
+            #terminal > div > div:nth-child(8)::before { content: "TP1:"; font-weight: bold; }
+            #terminal > div > div:nth-child(9)::before { content: "TP2:"; font-weight: bold; }
+            #terminal > div > div:nth-child(10)::before { content: "Signal:"; font-weight: bold; }
+        }
     </style>
 </head>
-<body class="p-2 pb-40">
+<body class="p-6 pb-40">
     <div id="sentiment-dashboard" class="max-w-7xl mx-auto my-2 p-2 border border-green-900 bg-black text-center text-xs font-bold text-green-500 uppercase tracking-widest">
         MARKET SENTIMENT: ANALYZING...
     </div>
